@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Monitoring System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for hover effects and transitions */
+        .year-box .semesters {
+            display: none; /* Hidden by default */
+            transition: all 0.3s ease-in-out;
+        }
+        .year-box:hover .semesters {
+            display: flex; /* Show on hover */
+        }
+        .year-box:hover .year-text {
+            display: none; /* Hide year text on hover */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-pink-300 via-purple-300 to-green-200 min-h-screen flex items-center justify-center font-sans p-4">
+
+    <div class="relative w-full max-w-4xl p-8 bg-white bg-opacity-30 backdrop-blur-lg rounded-2xl shadow-2xl">
+
+        <!-- CGPA Box in the corner -->
+        <div id="cgpa-box" class="absolute top-6 right-6 bg-white bg-opacity-80 p-4 rounded-xl shadow-lg text-center">
+            <h3 class="text-lg font-bold text-gray-800">Overall CGPA</h3>
+            <p id="cgpa-value" class="text-3xl font-bold text-green-600">0.00</p>
+        </div>
+
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-2">Student Performance</h1>
+        <p class="text-center text-gray-600 mb-10">Hover over a year to see semesters, then click to view marks.</p>
+
+        <!-- Year Boxes Container -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Year 1 Box -->
+            <div class="year-box bg-yellow-300 h-32 flex items-center justify-center rounded-xl shadow-lg border-4 border-black cursor-pointer transition-transform transform hover:scale-105">
+                <span class="year-text text-2xl font-bold text-black">Year 1</span>
+                <div class="semesters space-x-4">
+                    <button data-sem="1" class="sem-btn bg-white text-black font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-200">Sem 1</button>
+                    <button data-sem="2" class="sem-btn bg-white text-black font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-200">Sem 2</button>
+                </div>
+            </div>
+            <!-- Year 2 Box -->
+            <div class="year-box bg-pink-300 h-32 flex items-center justify-center rounded-xl shadow-lg border-4 border-black cursor-pointer transition-transform transform hover:scale-105">
+                <span class="year-text text-2xl font-bold text-black">Year 2</span>
+                <div class="semesters space-x-4">
+                    <button data-sem="3" class="sem-btn bg-white text-black font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-200">Sem 3</button>
+                    <button data-sem="4" class="sem-btn bg-white text-black font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-200">Sem 4</button>
+                </div>
+            </div>
+            <!-- Year 3 Box -->
+            <div class="year-box bg-cyan-300 h-32 flex items-center justify-center rounded-xl shadow-lg border-4 border-black cursor-pointer transition-transform transform hover:scale-105">
+                <span class="year-text text-2xl font-bold text-black">Year 3</span>
+                <div class="semesters space-x-4">
+                    <button data-sem="5" class="sem-btn bg-white text-black font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-200">Sem 5</button>
+                    <button data-sem="6" class="sem-btn bg-white text-black font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-200">Sem 6</button>
+                </div>
+            </div>
+            <!-- Year 4 Box -->
+            <div class="year-box bg-purple-400 h-32 flex items-center justify-center rounded-xl shadow-lg border-4 border-black cursor-pointer transition-transform transform hover:scale-105">
+                <span class="year-text text-2xl font-bold text-black">Year 4</span>
+                <div class="semesters space-x-4">
+                    <button data-sem="7" class="sem-btn bg-white text-black font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-200">Sem 7</button>
+                    <button data-sem="8" class="sem-btn bg-white text-black font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-200">Sem 8</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Marks Display Area -->
+        <div id="marks-display" class="mt-10 p-6 bg-white bg-opacity-80 rounded-xl shadow-lg hidden">
+            <h2 id="marks-title" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="border-b-2 border-gray-300">
+                        <th class="p-2 font-semibold text-gray-700">Subject</th>
+                        <th class="p-2 font-semibold text-gray-700">Marks</th>
+                        <th class="p-2 font-semibold text-gray-700">Grade</th>
+                    </tr>
+                </thead>
+                <tbody id="marks-table-body">
+                    <!-- Marks will be dynamically inserted here -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Mock Data for Student Marks ---
+            // In a real application, this would come from a database.
+            const studentMarks = {
+                1: { subjects: [{ name: 'Calculus', score: 85, grade: 'A' }, { name: 'Physics', score: 78, grade: 'B' }, { name: 'Programming 101', score: 92, grade: 'A+' }] },
+                2: { subjects: [{ name: 'Data Structures', score: 88, grade: 'A' }, { name: 'Digital Logic', score: 76, grade: 'B' }, { name: 'Communication Skills', score: 81, grade: 'A' }] },
+                3: { subjects: [{ name: 'Algorithms', score: 90, grade: 'A+' }, { name: 'Database Systems', score: 85, grade: 'A' }, { name: 'OOP', score: 82, grade: 'A' }] },
+                4: { subjects: [{ name: 'Operating Systems', score: 79, grade: 'B' }, { name: 'Computer Networks', score: 84, grade: 'A' }, { name: 'Software Engineering', score: 88, grade: 'A' }] },
+                5: { subjects: [] }, // Example of a future semester with no marks yet
+                6: { subjects: [] },
+                7: { subjects: [] },
+                8: { subjects: [] },
+            };
+
+            const semesterButtons = document.querySelectorAll('.sem-btn');
+            const marksDisplay = document.getElementById('marks-display');
+            const marksTitle = document.getElementById('marks-title');
+            const marksTableBody = document.getElementById('marks-table-body');
+            const cgpaValue = document.getElementById('cgpa-value');
+
+            // --- Function to calculate CGPA ---
+            const calculateCGPA = (upToSemester) => {
+                let totalPoints = 0;
+                let totalCredits = 0; // Assuming each subject is 1 credit for simplicity
+                let semestersWithMarks = 0;
+
+                for (let i = 1; i <= upToSemester; i++) {
+                    const semData = studentMarks[i];
+                    if (semData && semData.subjects.length > 0) {
+                        let semTotal = 0;
+                        semData.subjects.forEach(subject => {
+                            semTotal += subject.score;
+                        });
+                        totalPoints += semTotal / semData.subjects.length;
+                        semestersWithMarks++;
+                    }
+                }
+                
+                if (semestersWithMarks === 0) return '0.00';
+
+                // CGPA is often on a 10-point scale. We'll convert the average percentage.
+                const averagePercentage = totalPoints / semestersWithMarks;
+                const cgpa = (averagePercentage / 10).toFixed(2);
+                return cgpa;
+            };
+
+            // --- Function to display marks for a selected semester ---
+            const displayMarks = (semester) => {
+                const semesterData = studentMarks[semester];
+                marksTitle.textContent = `Semester ${semester} Marks`;
+                marksTableBody.innerHTML = ''; // Clear previous marks
+
+                if (semesterData && semesterData.subjects.length > 0) {
+                    semesterData.subjects.forEach(subject => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b border-gray-200';
+                        row.innerHTML = `
+                            <td class="p-2">${subject.name}</td>
+                            <td class="p-2">${subject.score} / 100</td>
+                            <td class="p-2 font-bold">${subject.grade}</td>
+                        `;
+                        marksTableBody.appendChild(row);
+                    });
+                } else {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td colspan="3" class="p-4 text-center text-gray-500">Marks for this semester are not available yet.</td>`;
+                    marksTableBody.appendChild(row);
+                }
+                
+                marksDisplay.classList.remove('hidden');
+                
+                // Update CGPA
+                const currentCGPA = calculateCGPA(semester);
+                cgpaValue.textContent = currentCGPA;
+            };
+
+            // --- Add click event listeners to all semester buttons ---
+            semesterButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const semester = e.target.getAttribute('data-sem');
+                    displayMarks(parseInt(semester));
+                });
+            });
+        });
+    </script>
+</body>
+</html>

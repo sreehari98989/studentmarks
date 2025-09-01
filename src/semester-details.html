@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semester Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            /* Red Curtain Background */
+            background: #8B0000;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 0, 0, 0.4) 0%, transparent 70%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 0, 0.4) 0%, transparent 70%),
+                linear-gradient(to bottom, rgba(139, 0, 0, 0.8) 0%, rgba(178, 34, 34, 0.8) 50%, rgba(139, 0, 0, 0.8) 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="container mx-auto max-w-4xl p-6 md:p-8 bg-white bg-opacity-90 backdrop-blur-lg rounded-2xl shadow-2xl">
+        <header class="flex justify-between items-center mb-6 border-b pb-4">
+            <div>
+                <h1 id="semester-title" class="text-3xl font-bold text-gray-800">Loading Results...</h1>
+                <p id="usn-display" class="text-gray-600"></p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm font-bold text-gray-700">Overall CGPA</p>
+                <p id="cgpa-value" class="text-3xl font-bold text-blue-700">0.00</p>
+            </div>
+        </header>
+
+        <main>
+            <table class="w-full text-left">
+                <thead class="border-b-2 border-gray-300 bg-gray-50">
+                    <tr>
+                        <th class="p-3">Code</th>
+                        <th class="p-3">Subject</th>
+                        <th class="p-3 text-center">Internal</th>
+                        <th class="p-3 text-center">External</th>
+                        <th class="p-3 text-center">Total</th>
+                        <th class="p-3 text-center">Result</th>
+                    </tr>
+                </thead>
+                <tbody id="marks-table-body">
+                    </tbody>
+            </table>
+        </main>
+
+        <footer class="mt-8 text-center">
+            <a href="student.html" class="text-blue-600 hover:underline">&larr; Back to Main Portal</a>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const marksTableBody = document.getElementById('marks-table-body');
+            const semesterTitle = document.getElementById('semester-title');
+            const usnDisplay = document.getElementById('usn-display');
+            const cgpaValue = document.getElementById('cgpa-value');
+
+            // 1. Get the USN and semester from the URL
+            const params = new URLSearchParams(window.location.search);
+            const usn = params.get('usn');
+            const semesterToShow = params.get('sem');
+
+            if (!usn || !semesterToShow) {
+                semesterTitle.textContent = "Error: USN or Semester not provided.";
+                return;
+            }
+
+            // Update the UI with the details from the URL
+            semesterTitle.textContent = `Semester ${semesterToShow} Results`;
+            usnDisplay.textContent = `USN: ${usn}`;
+
+            // 2. Fetch all results for that USN
+            fetch(`http://localhost:3000/api/results/${usn}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Could not fetch marks.');
+                    return response.json();
+                })
+                .then(data => {
+                    // Calculate overall CGPA from all subjects
+                    updateCgpa(data.subjects);
+
+                    // Filter to get subjects for only the requested semester
+                    const semesterSubjects = data.subjects.filter(subject => subject.code.charAt(3) === semesterToShow);
+                    
+                    if (semesterSubjects.length === 0) {
+                        marksTableBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No marks found for this semester.</td></tr>';
+                        return;
+                    }
+
+                    // 3. Display the marks in the table
+                    marksTableBody.innerHTML = '';
+                    semesterSubjects.forEach(subject => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b last:border-b-0';
+                        row.innerHTML = `
+                            <td class="p-3">${subject.code}</td>
+                            <td class="p-3 font-medium">${subject.name}</td>
+                            <td class="p-3 text-center">${subject.internal.toFixed(0)}</td>
+                            <td class="p-3 text-center">${subject.external}</td>
+                            <td class="p-3 text-center font-bold">${subject.total.toFixed(0)}</td>
+                            <td class="p-3 text-center font-bold ${subject.result === 'P' ? 'text-green-600' : 'text-red-500'}">${subject.result}</td>
+                        `;
+                        marksTableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    marksTableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error loading marks. Please try again.</td></tr>`;
+                });
+            
+            const updateCgpa = (allSubjects) => {
+                let totalPoints = 0;
+                let subjectCount = 0;
+                allSubjects.forEach(subject => {
+                    if (subject.result === 'P') {
+                        totalPoints += subject.total;
+                        subjectCount++;
+                    }
+                });
+                if (subjectCount === 0) return;
+                const average = totalPoints / subjectCount;
+                cgpaValue.textContent = (average / 9.5).toFixed(2);
+            };
+        });
+    </script>
+</body>
+</html>

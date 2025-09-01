@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Performance Portal</title>
+    <script src="https://cdn.tailwindcss.com/"></script>
+    <style>
+        body {
+            background-color: #111827;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        .year-box { transition: transform 0.2s, box-shadow 0.2s; }
+        .year-box:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .modal-content { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="flex flex-col items-center text-center font-sans p-4 text-white">
+
+    <div id="loading-state" class="text-center mt-20">
+        <h1 class="text-3xl font-bold">Loading Student Data...</h1>
+        <p class="text-gray-400">Please wait a moment.</p>
+    </div>
+
+    <div id="main-content" class="hidden w-full max-w-4xl">
+        <header class="my-8">
+            <h1 id="portal-title" class="text-4xl font-bold"></h1>
+            <p id="portal-subtitle" class="text-gray-300 mt-2">Click on a semester to view results.</p>
+        </header>
+
+        <div class="relative">
+             <div class="absolute -top-20 right-0 p-4 bg-white/10 border border-white/20 rounded-lg text-center">
+                <span class="text-sm block text-gray-300">Overall CGPA</span>
+                <span id="cgpa-value" class="text-3xl font-bold text-cyan-400">0.00</span>
+            </div>
+            <div id="year-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                 </div>
+        </div>
+    </div>
+
+    <div id="marks-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="modal-content bg-gray-800 border border-white/20 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col">
+            <header class="flex justify-between items-center p-4 border-b border-white/20">
+                <h2 id="marks-title" class="text-2xl font-bold"></h2>
+                <button id="close-modal-btn" class="text-3xl text-gray-400 hover:text-white">&times;</button>
+            </header>
+            <main class="p-6 overflow-y-auto">
+                <table class="w-full text-left">
+                    <thead class="border-b-2 border-white/20">
+                        <tr>
+                            <th class="p-3">Code</th><th class="p-3">Subject</th><th class="p-3 text-center">Internal</th><th class="p-3 text-center">External</th><th class="p-3 text-center">Total</th><th class="p-3 text-center">Result</th>
+                        </tr>
+                    </thead>
+                    <tbody id="marks-table-body"></tbody>
+                </table>
+            </main>
+        </div>
+    </div>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const loadingState = document.getElementById('loading-state');
+    const mainContent = document.getElementById('main-content');
+    const portalTitle = document.getElementById('portal-title');
+    const cgpaValue = document.getElementById('cgpa-value');
+    const yearGrid = document.getElementById('year-grid');
+    const marksModal = document.getElementById('marks-modal');
+    const marksTitle = document.getElementById('marks-title');
+    const marksTableBody = document.getElementById('marks-table-body');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+
+    let studentData = {};
+
+    const loadStudentPortal = async () => {
+        const params = new URLSearchParams(window.location.search);
+        const usn = params.get('usn');
+
+        if (!usn) {
+            loadingState.innerHTML = `<h1 class="text-3xl font-bold text-red-400">Error: No USN Provided</h1><p class="text-gray-400">Please return to the <a href="login.html" class="underline text-cyan-400">login page</a>.</p>`;
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/results/${usn}`);
+            if (!response.ok) {
+                throw new Error((await response.json()).message || 'Could not find results.');
+            }
+            studentData = await response.json();
+            
+            loadingState.style.display = 'none';
+            mainContent.classList.remove('hidden');
+            renderPortal();
+        } catch (error) {
+            loadingState.innerHTML = `<h1 class="text-3xl font-bold text-red-400">Error</h1><p class="text-gray-400">${error.message}</p><p><a href="login.html" class="underline text-cyan-400">Try again</a></p>`;
+        }
+    };
+    
+    const renderPortal = () => {
+        portalTitle.textContent = `Welcome, ${studentData.usn}`;
+        updateCgpa(studentData.subjects);
+        
+        const semestersWithData = new Set();
+        studentData.subjects.forEach(subject => {
+            const semMatch = subject.code.match(/\d/);
+            if (semMatch) semestersWithData.add(semMatch[0]);
+        });
+
+        yearGrid.innerHTML = '';
+        const semestersByYear = { 1: [1, 2], 2: [3, 4], 3: [5, 6], 4: [7, 8] };
+
+        for (const year in semestersByYear) {
+            const yearBox = document.createElement('div');
+            yearBox.className = 'year-box p-6 bg-white/10 border border-white/20 rounded-lg text-white';
+            
+            let semesterButtonsHTML = '';
+            semestersByYear[year].forEach(sem => {
+                const isAvailable = semestersWithData.has(String(sem));
+                const buttonClass = isAvailable 
+                    ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                    : 'bg-gray-700 text-gray-400 cursor-not-allowed opacity-50';
+                
+                // *** THIS IS THE CHANGE ***
+                // Add the lock symbol if the marks are not available
+                const buttonText = isAvailable ? `Sem ${sem}` : `Sem ${sem} 🔒`;
+
+                semesterButtonsHTML += `<button class="sem-btn m-2 px-4 py-2 rounded-md transition ${buttonClass}" data-sem="${sem}" data-available="${isAvailable}">${buttonText}</button>`;
+            });
+
+            yearBox.innerHTML = `
+                <h2 class="text-2xl font-bold">Year ${year}</h2>
+                <div class="mt-4">${semesterButtonsHTML}</div>`;
+            yearGrid.appendChild(yearBox);
+        }
+        
+        document.querySelectorAll('.sem-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const semester = e.target.dataset.sem;
+                const isAvailable = e.target.dataset.available === 'true';
+                if (isAvailable) {
+                    displayMarks(semester);
+                } else {
+                    alert(`Results for Semester ${semester} are not yet available.`);
+                }
+            });
+        });
+    };
+
+    const displayMarks = (semester) => {
+        const semRegex = /\d/;
+        const semesterSubjects = studentData.subjects.filter(s => {
+            const match = s.code.match(semRegex);
+            return match && match[0] === semester;
+        });
+        marksTitle.textContent = `Semester ${semester} Results`;
+        marksTableBody.innerHTML = '';
+        semesterSubjects.forEach(subject => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-white/10 last:border-b-0';
+            row.innerHTML = `
+                <td class="p-3">${subject.code}</td><td class="p-3 font-medium">${subject.name}</td>
+                <td class="p-3 text-center">${subject.internal.toFixed(0)}</td>
+                <td class="p-3 text-center">${subject.external}</td>
+                <td class="p-3 text-center font-bold">${subject.total.toFixed(0)}</td>
+                <td class="p-3 text-center font-bold ${subject.result === 'P' ? 'text-green-400' : 'text-red-400'}">${subject.result}</td>`;
+            marksTableBody.appendChild(row);
+        });
+        marksModal.classList.remove('hidden');
+    };
+    
+    const updateCgpa = (allSubjects) => {
+        const passedSubjects = allSubjects.filter(s => s.result === 'P');
+        if (passedSubjects.length === 0) return;
+        const totalPoints = passedSubjects.reduce((sum, subject) => sum + subject.total, 0);
+        const average = totalPoints / passedSubjects.length;
+        cgpaValue.textContent = (average / 9.5).toFixed(2);
+    };
+
+    closeModalBtn.addEventListener('click', () => marksModal.classList.add('hidden'));
+    marksModal.addEventListener('click', (e) => {
+        if (e.target === marksModal) marksModal.classList.add('hidden');
+    });
+
+    loadStudentPortal();
+});
+</script>
+
+</body>
+</html>

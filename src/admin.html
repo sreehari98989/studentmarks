@@ -5,183 +5,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Marks Entry</title>
     <script src="https://cdn.tailwindcss.com/"></script>
+    <style>
+        body {
+            background: #8B0000;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 0, 0, 0.4) 0%, transparent 70%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 0, 0.4) 0%, transparent 70%);
+            min-height: 100vh;
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-purple-400 via-indigo-500 to-purple-800 min-h-screen p-4">
+<body class="min-h-screen p-4">
 
-    <div class="container mx-auto my-10 p-6 md:p-8 bg-white bg-opacity-80 backdrop-blur-lg rounded-2xl shadow-2xl max-w-5xl">
+    <div class="container mx-auto my-10 p-6 md:p-8 bg-white bg-opacity-90 backdrop-blur-lg rounded-2xl shadow-2xl max-w-5xl">
         <header class="mb-8 text-center">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Admin Marks Portal</h1>
-            <p class="text-gray-600">Enter marks to see the total and result calculated automatically.</p>
+            <p class="text-gray-600">Enter student marks and save them to the database.</p>
         </header>
 
         <form id="marks-form" class="space-y-6">
-            <!-- Student Info Section -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                     <label for="department" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                    <select id="department" name="department" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    <select id="department" name="department" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500" required>
                         <option value="" disabled selected>Select Department</option>
-                        <option value="CSE">CSE (Computer Science)</option>
-                        <option value="ISE">ISE (Information Science)</option>
-                        <option value="AIML">AIML (AI & Machine Learning)</option>
-                        <option value="CSD">CSD (Computer Science & Design)</option>
+                        <option value="CSE">CSE</option>
+                        <option value="ISE">ISE</option>
                     </select>
                 </div>
                 <div>
                     <label for="semester" class="block text-sm font-medium text-gray-700 mb-1">Semester</label>
-                    <select id="semester" name="semester" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    <select id="semester" name="semester" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500" required>
                         <option value="" disabled selected>Select Semester</option>
                         <option value="1">Semester 1</option>
                         <option value="2">Semester 2</option>
                         <option value="3">Semester 3</option>
                         <option value="4">Semester 4</option>
                         <option value="5">Semester 5</option>
+                        <option value="6">Semester 6</option>
+                        <option value="7">Semester 7</option>
+                        <option value="8">Semester 8</option>
                     </select>
                 </div>
                 <div>
                     <label for="usn" class="block text-sm font-medium text-gray-700 mb-1">Student USN</label>
-                    <input type="text" id="usn" name="usn" placeholder="e.g., 4CB23CS100" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    <input type="text" id="usn" name="usn" placeholder="e.g., 4CB23CS100" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500" required>
                 </div>
             </div>
 
-            <!-- Dynamic Subjects Entry Section -->
             <div id="subjects-container" class="space-y-4 pt-4 border-t">
-                <p id="subjects-placeholder" class="text-gray-500 text-center py-4">Please select a department and semester to see the subjects.</p>
-                <!-- Subject cards will be added here by JS -->
+                 <p id="subjects-placeholder" class="text-gray-500 text-center py-4">Please select a department and semester to see the subjects.</p>
             </div>
 
-            <div class="flex justify-end items-center">
-                <button type="submit" class="bg-purple-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-purple-700 transition text-lg">
+            <div class="flex justify-end items-center gap-4 pt-4 border-t">
+                <span id="form-message" class="text-sm font-medium"></span>
+                <button type="submit" id="submit-btn" class="bg-rose-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-rose-700 disabled:bg-gray-400 transition text-lg">
                     Save All Marks
                 </button>
             </div>
         </form>
-        
-        <div id="success-message" class="hidden mt-6 p-4 bg-green-100 text-green-800 border border-green-300 rounded-lg">
-            Marks have been saved successfully!
-        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- EXPANDED CURRICULUM DATA ---
             const curriculum = {
                 CSE: {
-                    1: [
-                        { code: 'BCHES102', name: 'Engineering Chemistry' },
-                        { code: 'BMATE101', name: 'Mathematics-I for CSE Stream' },
-                        { code: 'BESCK103', name: 'Basic Electronics & Comm. Engg' },
-                        { code: 'BCEDK106', name: 'Balake Kannada' }
-                    ],
-                    2: [
-                        { code: 'BPHYS202', name: 'Engineering Physics' },
-                        { code: 'BMATE201', name: 'Mathematics-II for CSE Stream' },
-                        { code: 'BELEK203', name: 'Basic Electrical Engineering' },
-                        { code: 'BCPLK206', name: 'Samskrutika Kannada' }
-                    ],
-                    3: [
-                        { code: 'BCS301', name: 'Transform Calculus, Fourier Series' },
-                        { code: 'BCS302', name: 'Data Structures and Applications' },
-                        { code: 'BCS303', name: 'Analog and Digital Electronics' },
-                        { code: 'BCS304', name: 'Computer Organization and Architecture' }
-                    ],
-                    4: [
-                        { code: 'BCS401', name: 'Analysis & Design of Algorithms' },
-                        { code: 'BCS402', name: 'Microcontrollers' },
-                        { code: 'BCS403', name: 'Database Management Systems' },
-                        { code: 'BCSL404', name: 'Algorithms Lab' }
-                    ],
-                    5: [
-                        { code: 'BCS501', name: 'Computer Networks' },
-                        { code: 'BCS502', name: 'Automata Theory' },
-                        { code: 'BCS503', name: 'Web Technologies' },
-                        { code: 'BCSL504', name: 'UNIX Programming Lab' }
-                    ]
-                },
-                ISE: {
-                    1: [
-                        { code: 'BCHES102', name: 'Engineering Chemistry' },
-                        { code: 'BMATE101', name: 'Mathematics-I for CSE Stream' },
-                        { code: 'BESCK103', name: 'Basic Electronics & Comm. Engg' },
-                        { code: 'BCEDK106', name: 'Balake Kannada' }
-                    ],
-                    2: [
-                        { code: 'BPHYS202', name: 'Engineering Physics' },
-                        { code: 'BMATE201', name: 'Mathematics-II for CSE Stream' },
-                        { code: 'BELEK203', name: 'Basic Electrical Engineering' },
-                        { code: 'BCPLK206', name: 'Samskrutika Kannada' }
-                    ]
+                    1: [{ code: 'BCHES102', name: 'Engineering Chemistry' },{ code: 'BMATE101', name: 'Mathematics-I' }],
+                    2: [{ code: 'BPHYS202', name: 'Engineering Physics' },{ code: 'BMATE201', name: 'Mathematics-II' }],
+                    3: [{ code: 'BCS301', name: 'Data Structures' },{ code: 'BCS302', name: 'Electronics' }],
+                    4: [{ code: 'BCS401', name: 'Algorithms' },{ code: 'BCS402', name: 'Microcontrollers' }],
+                    5: [{ code: 'BCS501', name: 'Computer Networks' },{ code: 'BCS502', name: 'Automata Theory' }],
+                    6: [{ code: 'BCS601', name: 'Compiler Design' },{ code: 'BCS602', name: 'Web Tech Lab' }],
+                    7: [{ code: 'BCS701', name: 'AI & ML' },{ code: 'BCS702', name: 'Cloud Computing' }],
+                    8: [{ code: 'BCS801', name: 'Project Work' },{ code: 'BCS802', name: 'Internship' }]
                 }
-                // You can continue to add AIML and CSD subjects here
             };
 
+            const form = document.getElementById('marks-form');
             const departmentSelect = document.getElementById('department');
             const semesterSelect = document.getElementById('semester');
             const subjectsContainer = document.getElementById('subjects-container');
-            const subjectsPlaceholder = document.getElementById('subjects-placeholder');
-            const form = document.getElementById('marks-form');
-            const successMessage = document.getElementById('success-message');
+            const placeholder = document.getElementById('subjects-placeholder');
+            const submitBtn = document.getElementById('submit-btn');
+            const formMessage = document.getElementById('form-message');
 
             const calculateResult = (internal, external) => {
-                const PASS_CRITERIA = {
-                    internal: 20,
-                    external: 18,
-                    total: 40
-                };
                 const total = internal + external;
-                if (internal >= PASS_CRITERIA.internal && external >= PASS_CRITERIA.external && total >= PASS_CRITERIA.total) {
-                    return 'P';
-                }
-                return 'F';
+                return (internal >= 20 && external >= 18 && total >= 40) ? 'P' : 'F';
             };
-
+            
             const updateSubjectRow = (row) => {
                 const cie1 = parseFloat(row.querySelector('.cie1').value) || 0;
                 const cie2 = parseFloat(row.querySelector('.cie2').value) || 0;
                 const lab = parseFloat(row.querySelector('.lab').value) || 0;
                 const assessment = parseFloat(row.querySelector('.assessment').value) || 0;
                 const external = parseFloat(row.querySelector('.external-marks').value) || 0;
-
-                const scaledCie1 = (cie1 / 25) * 15;
-                
-                const internal = scaledCie1 + cie2 + lab + assessment;
+                const internal = ((cie1 / 25) * 15) + cie2 + lab + assessment;
                 const total = internal + external;
                 const result = calculateResult(internal, external);
 
                 row.querySelector('.internal-total').textContent = internal.toFixed(2);
                 row.querySelector('.total-marks').textContent = total.toFixed(2);
-                
                 const resultEl = row.querySelector('.final-result');
                 resultEl.textContent = result;
-                resultEl.className = 'final-result font-bold text-lg';
-                if (result === 'P') {
-                    resultEl.classList.add('text-green-600');
-                } else {
-                    resultEl.classList.add('text-red-500');
-                }
+                resultEl.className = `final-result font-bold text-lg ${result === 'P' ? 'text-green-600' : 'text-red-500'}`;
             };
 
             const populateSubjects = () => {
                 const department = departmentSelect.value;
                 const semester = semesterSelect.value;
+                subjectsContainer.innerHTML = '';
                 
-                subjectsContainer.querySelectorAll('.subject-card').forEach(row => row.remove());
-
                 if (department && semester && curriculum[department]?.[semester]) {
-                    subjectsPlaceholder.style.display = 'none';
                     const subjects = curriculum[department][semester];
-                    
                     subjects.forEach(subject => {
-                        const subjectCard = document.createElement('div');
-                        subjectCard.className = 'subject-card bg-gray-50 p-4 rounded-lg border';
-                        subjectCard.innerHTML = `
+                        const card = document.createElement('div');
+                        card.className = 'subject-card bg-gray-50 p-4 rounded-lg border';
+                        card.innerHTML = `
                             <input type="hidden" class="subject-code" value="${subject.code}">
                             <input type="hidden" class="subject-name" value="${subject.name}">
                             <div class="flex flex-wrap justify-between items-center mb-3">
-                                <div class="mb-2 md:mb-0">
-                                    <p class="font-bold text-gray-800">${subject.name}</p>
-                                    <p class="text-sm text-gray-500">${subject.code}</p>
-                                </div>
+                                <div class="mb-2 md:mb-0"><p class="font-bold text-gray-800">${subject.name}</p><p class="text-sm text-gray-500">${subject.code}</p></div>
                                 <div class="flex items-center gap-4">
                                     <div class="text-center"><p class="text-xs font-semibold text-gray-600">INTERNAL</p><p class="internal-total font-bold text-lg text-gray-800">0.00</p></div>
                                     <div class="text-center"><p class="text-xs font-semibold text-gray-600">TOTAL</p><p class="total-marks font-bold text-lg text-blue-600">0.00</p></div>
@@ -194,17 +138,19 @@
                                 <div><label class="block text-xs font-medium text-gray-600">Lab (10)</label><input type="number" placeholder="0" class="lab w-full p-2 border rounded-md text-center" min="0" max="10" required></div>
                                 <div><label class="block text-xs font-medium text-gray-600">Asmt (10)</label><input type="number" placeholder="0" class="assessment w-full p-2 border rounded-md text-center" min="0" max="10" required></div>
                                 <div><label class="block text-xs font-medium text-gray-600">External (50)</label><input type="number" placeholder="0" class="external-marks w-full p-2 border rounded-md text-center" min="0" max="50" required></div>
-                            </div>
-                        `;
-                        subjectsContainer.appendChild(subjectCard);
-                        
-                        subjectCard.querySelectorAll('input[type="number"]').forEach(input => {
-                            input.addEventListener('input', () => updateSubjectRow(subjectCard));
-                        });
+                            </div>`;
+                        card.querySelectorAll('input[type="number"]').forEach(input => input.addEventListener('input', () => updateSubjectRow(card)));
+                        subjectsContainer.appendChild(card);
                     });
                 } else {
-                    subjectsPlaceholder.style.display = 'block';
+                    subjectsContainer.appendChild(placeholder);
                 }
+            };
+            
+            const showMessage = (message, isError = false) => {
+                formMessage.textContent = message;
+                formMessage.className = `text-sm font-medium ${isError ? 'text-red-600' : 'text-green-600'}`;
+                setTimeout(() => formMessage.textContent = '', 3000);
             };
 
             departmentSelect.addEventListener('change', populateSubjects);
@@ -212,45 +158,39 @@
 
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                successMessage.classList.add('hidden');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Saving...';
+                
                 const data = {
                     department: form.department.value,
                     usn: form.usn.value,
                     semester: form.semester.value,
-                    subjects: []
-                };
-                document.querySelectorAll('.subject-card').forEach(row => {
-                    data.subjects.push({
+                    subjects: Array.from(document.querySelectorAll('.subject-card')).map(row => ({
                         code: row.querySelector('.subject-code').value,
                         name: row.querySelector('.subject-name').value,
-                        cie1: parseFloat(row.querySelector('.cie1').value) || 0,
-                        cie2: parseFloat(row.querySelector('.cie2').value) || 0,
-                        lab: parseFloat(row.querySelector('.lab').value) || 0,
-                        assessment: parseFloat(row.querySelector('.assessment').value) || 0,
                         internal: parseFloat(row.querySelector('.internal-total').textContent),
                         external: parseFloat(row.querySelector('.external-marks').value) || 0,
                         total: parseFloat(row.querySelector('.total-marks').textContent),
                         result: row.querySelector('.final-result').textContent
-                    });
-                });
-                if (data.subjects.length === 0) {
-                    alert('Please select a department and semester to load subjects first.');
-                    return;
-                }
-                console.log('Submitting Data:', data);
+                    }))
+                };
+
                 try {
                     const response = await fetch('http://localhost:3000/api/marks', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
-                    if (!response.ok) throw new Error('Failed to save marks');
-                    successMessage.classList.remove('hidden');
-                    form.usn.value = '';
+                    if (!response.ok) throw new Error((await response.json()).message || 'Failed to save marks');
+                    showMessage('Marks saved successfully!');
+                    form.reset();
                     populateSubjects();
                 } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error saving marks. Check the console.');
+                    console.error('Submit Error:', error);
+                    showMessage(error.message, true);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Save All Marks';
                 }
             });
         });
